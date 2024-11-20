@@ -1,5 +1,6 @@
-type: web
-name: flask-socketio-app
-env: python
-buildCommand: pip install -r requirements.txt
-startCommand: bash start.sh
+services:
+  - type: web
+    name: flask-app
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "bash start.sh"
