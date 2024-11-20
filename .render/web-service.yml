@@ -1,0 +1,5 @@
+type: web
+name: flask-socketio-app
+env: python
+buildCommand: pip install -r requirements.txt
+startCommand: bash start.sh

@@ -211,14 +211,18 @@ def on_number_selected(data):
 @socketio.on('send_message')
 def on_send_message(data):
     sid = request.sid
-    user = sid_to_user.get(sid)
-    if not user:
-        return
-    room = user['room']
-    username = user['username']
     message = data['message']
-    rooms[room]['chat'].append({'username': username, 'message': message})
-    emit('new_message', {'username': username, 'message': message}, room=room)
+    user = sid_to_user.get(sid)
+    if user:
+        username = user['username']
+        room = user['room']
+    else:
+        username = '匿名流言'
+        room = None  # Broadcast to all
+    if room:
+        emit('new_message', {'username': username, 'message': message}, room=room)
+    else:
+        emit('new_message', {'username': username, 'message': message})
 
 def check_bingo(marked):
     lines = [
@@ -240,5 +244,9 @@ def check_bingo(marked):
             return True
     return False
 
+# if __name__ == '__main__':
+#     socketio.run(app, debug=True)
+#     # socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
