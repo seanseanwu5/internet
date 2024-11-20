@@ -1,2 +1,2 @@
 #!/bin/bash
-gunicorn -k eventlet -w 1 app.__init__:app
+gunicorn --bind 0.0.0.0:5000 app:app
