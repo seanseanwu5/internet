@@ -2,7 +2,7 @@
 # Backend server using Flask and Socket.IO
 
 import eventlet
-eventlet.monkey_patch()
+eventlet.monkey_patch(socket=False, time=False, dns=False)
 
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
