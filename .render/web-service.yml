@@ -1,5 +1,7 @@
 services:
   - type: web
+    web:
+    command: gunicorn --worker-class sync server:app
     name: flask-socketio-app
     env: python
     plan: free
