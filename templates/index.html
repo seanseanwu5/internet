@@ -1,0 +1,438 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>BINGO 遊戲</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.0/themes/smoothness/jquery-ui.css">
+    <style>
+        /* Styles */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #login, #game {
+            width: 800px;
+            margin: auto;
+            margin-top: 50px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+        h1, h2, h3 {
+            text-align: center;
+        }
+        #bingo-board td, #bingo-board-game td {
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            border: 1px solid #000;
+            font-size: 18px;
+            cursor: pointer;
+            vertical-align: middle;
+        }
+        #bingo-board td {
+            background-color: #e0e0e0;
+        }
+        #bingo-board-game td {
+            background-color: #fff;
+        }
+        #bingo-board-game .marked {
+            background-color: #8bc34a;
+            color: #fff;
+        }
+        #number-pool .number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            margin: 2px;
+            text-align: center;
+            line-height: 30px;
+            border: 1px solid #000;
+            cursor: move;
+            background-color: #fff;
+            border-radius: 3px;
+        }
+        #number-pool .number.disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+        #player-list {
+            border: 1px solid #000;
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+        #timer {
+            font-size: 20px;
+            color: red;
+        }
+        #called-numbers {
+            margin-top: 20px;
+        }
+        #called-numbers .number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            margin: 2px;
+            text-align: center;
+            line-height: 30px;
+            border: 1px solid #000;
+            background-color: #ccc;
+            border-radius: 3px;
+        }
+        #called-numbers .number.called {
+            background-color: #8bc34a;
+            color: #fff;
+        }
+        #number-selection {
+            margin-top: 20px;
+        }
+        #chat {
+            margin-top: 20px;
+        }
+        #chat-messages {
+            background-color: #f9f9f9;
+            padding: 5px;
+        }
+        #chat-input {
+            width: 80%;
+        }
+        #send-message {
+            width: 15%;
+        }
+        button {
+            padding: 5px 10px;
+            margin-top: 10px;
+        }
+        input[type="text"], input[type="number"] {
+            padding: 5px;
+            width: calc(100% - 10px);
+        }
+    </style>
+</head>
+<body>
+    <h1>BINGO 遊戲</h1>
+    <div id="login">
+        <h2>請輸入您的資訊</h2>
+        <label>使用者名稱：</label>
+        <input type="text" id="username"><br><br>
+        <label>房間號碼：</label>
+        <input type="text" id="room"><br><br>
+        <button id="create-room">建立房間</button>
+        <button id="join-room">加入房間</button>
+    </div>
+    <div id="game" style="display:none;">
+        <h2>玩家：<span id="player-name"></span> | 房間：<span id="room-name"></span></h2>
+        <div id="player-list">
+            <h3>目前玩家：</h3>
+            <ul id="players"></ul>
+        </div>
+        <div id="setup-board">
+            <h3>請拖放 1~25 的數字到下方的 BINGO 板</h3>
+            <div id="number-pool"></div>
+            <table id="bingo-board">
+                <!-- Generate 5x5 empty table -->
+                <tbody>
+                    <tr>
+                        <td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                    <tr>
+                        <td></td><td></td><td></td><td></td><td></td>
+                    </tr>
+                </tbody>
+            </table>
+            <button id="submit-board">提交板</button>
+        </div>
+        <div id="waiting" style="display:none;">
+            <h3>等待其他玩家...</h3>
+            <ul id="waiting-player-list"></ul>
+            <button id="start-game">開始遊戲</button>
+        </div>
+        <div id="bingo-game" style="display:none;">
+            <h3>輪到：<span id="current-player"></span></h3>
+            <h3>倒數計時：<span id="timer">15</span> 秒</h3>
+            <table id="bingo-board-game"></table>
+            <div id="called-numbers">
+                <h3>已被選擇的數字：</h3>
+                <div id="called-number-list"></div>
+            </div>
+            <div id="chat">
+                <h3>聊天</h3>
+                <div id="chat-messages" style="border:1px solid #000; height:200px; overflow-y:scroll;"></div>
+                <input type="text" id="chat-input">
+                <button id="send-message">發送</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        var socket = io();
+        var username;
+        var room;
+        var board = [];
+        var marked = [];
+        var isMyTurn = false;
+        var timerInterval;
+        var numbersCalled = [];
+
+        $(function() {
+            $('#create-room').click(function() {
+                username = $('#username').val();
+                room = $('#room').val();
+                socket.emit('create_room', {'room': room, 'username': username});
+                $('#player-name').text(username);
+                $('#room-name').text(room);
+                $('#login').hide();
+                $('#game').show();
+            });
+
+            $('#join-room').click(function() {
+                username = $('#username').val();
+                room = $('#room').val();
+                socket.emit('join_room', {'room': room, 'username': username});
+                $('#player-name').text(username);
+                $('#room-name').text(room);
+                $('#login').hide();
+                $('#game').show();
+            });
+
+            function generateNumberPool() {
+                var pool = $('#number-pool');
+                for (var i = 1; i <= 25; i++) {
+                    var numDiv = $('<div></div>').addClass('number').text(i);
+                    numDiv.draggable({
+                        helper: 'clone',
+                        revert: 'invalid'
+                    });
+                    pool.append(numDiv);
+                }
+            }
+
+            function makeBoardDroppable() {
+                $('#bingo-board td').droppable({
+                    accept: '.number',
+                    drop: function(event, ui) {
+                        var number = ui.draggable.text();
+                        if ($(this).text() !== '') {
+                            var prevNumber = $(this).text();
+                            // Enable the previous number
+                            $('#number-pool .number').each(function() {
+                                if ($(this).text() === prevNumber) {
+                                    $(this).draggable('enable').removeClass('disabled');
+                                }
+                            });
+                        }
+                        $(this).text(number);
+                        $(this).data('number', number);
+                        // Disable the number in pool
+                        ui.draggable.draggable('disable').addClass('disabled');
+                    }
+                });
+            }
+
+            generateNumberPool();
+            makeBoardDroppable();
+
+            $('#submit-board').click(function() {
+                var numbers = [];
+                var usedNumbers = {};
+                $('#bingo-board td').each(function() {
+                    var num = $(this).data('number');
+                    if (!num) {
+                        alert('請將所有數字填滿');
+                        numbers = [];
+                        return false;
+                    }
+                    num = parseInt(num);
+                    if (usedNumbers[num]) {
+                        alert('每個數字只能使用一次');
+                        numbers = [];
+                        return false;
+                    }
+                    usedNumbers[num] = true;
+                    numbers.push(num);
+                });
+                if (numbers.length != 25) {
+                    return;
+                }
+                board = numbers;
+                marked = new Array(25).fill(false);
+                socket.emit('submit_board', {'board': board});
+                generateGameBoard();
+                $('#setup-board').hide();
+                $('#waiting').show();
+            });
+
+            $('#start-game').click(function() {
+                socket.emit('start_game');
+            });
+
+            $('#send-message').click(function() {
+                var message = $('#chat-input').val();
+                if (message.trim() === '') return;
+                socket.emit('send_message', {'message': message});
+                $('#chat-input').val('');
+            });
+
+            socket.on('update_player_list', function(data) {
+                var list = $('#players');
+                list.empty();
+                data.players.forEach(function(player) {
+                    list.append('<li>' + player + '</li>');
+                });
+            });
+
+            socket.on('update_submission_status', function(data) {
+                var status = data.submission_status;
+                var list = $('#waiting-player-list');
+                list.empty();
+                for (var uname in status) {
+                    var item = $('<li></li>').text(uname + (status[uname] ? ' 已完成' : ' 選擇中...'));
+                    list.append(item);
+                }
+            });
+
+            socket.on('game_started', function(data) {
+                $('#waiting').hide();
+                $('#bingo-game').show();
+                generateAvailableNumbers();
+                generateCalledNumbers();
+            });
+
+            socket.on('waiting_for_players', function(data) {
+                alert(data.message);
+            });
+
+            socket.on('your_turn', function(data) {
+                var current = data.username;
+                $('#current-player').text(current);
+                isMyTurn = (current == username);
+                resetTimer();
+            });
+
+            socket.on('turn_skipped', function(data) {
+                alert('玩家 ' + data.username + ' 超時，跳過他的回合');
+            });
+
+            socket.on('number_called', function(data) {
+                var number = data.number;
+                numbersCalled = data.numbers_called;
+                updateCalledNumbers();
+                var index = board.indexOf(number);
+                if (index >= 0) {
+                    marked[index] = true;
+                    updateGameBoard();
+                }
+                if (data.winner) {
+                    alert('玩家 ' + data.winner + ' 獲勝！');
+                    isMyTurn = false;
+                }
+            });
+
+            socket.on('game_over', function(data) {
+                alert('遊戲結束！玩家 ' + data.winner + ' 獲勝！');
+                isMyTurn = false;
+            });
+
+            socket.on('new_message', function(data) {
+                $('#chat-messages').append('<div><strong>' + data.username + ':</strong> ' + data.message + '</div>');
+                $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+            });
+
+            function generateGameBoard() {
+                var table = $('#bingo-board-game');
+                table.empty();
+                for (var i = 0; i < 5; i++) {
+                    var row = $('<tr></tr>');
+                    for (var j = 0; j < 5; j++) {
+                        var index = i * 5 + j;
+                        var cell = $('<td></td>').text(board[index]);
+                        cell.data('number', board[index]);
+                        cell.data('index', index);
+                        if (marked[index]) {
+                            cell.addClass('marked');
+                        }
+                        cell.click(function() {
+                            if (isMyTurn) {
+                                var num = $(this).data('number');
+                                if (numbersCalled.includes(num)) {
+                                    alert('該數字已被選過');
+                                    return;
+                                }
+                                socket.emit('number_selected', {'number': num});
+                                isMyTurn = false;
+                            }
+                        });
+                        row.append(cell);
+                    }
+                    table.append(row);
+                }
+            }
+
+            function updateGameBoard() {
+                $('#bingo-board-game td').each(function(index) {
+                    if (marked[index]) {
+                        $(this).addClass('marked');
+                    }
+                });
+            }
+
+            function resetTimer() {
+                var timeLeft = 15;
+                $('#timer').text(timeLeft);
+                if (timerInterval) {
+                    clearInterval(timerInterval);
+                }
+                timerInterval = setInterval(function() {
+                    timeLeft--;
+                    $('#timer').text(timeLeft);
+                    if (timeLeft <= 0) {
+                        clearInterval(timerInterval);
+                    }
+                }, 1000);
+            }
+
+            function generateAvailableNumbers() {
+                var container = $('#available-numbers');
+                container.empty();
+                for (var i = 1; i <= 25; i++) {
+                    var numDiv = $('<div></div>').addClass('number').text(i);
+                    container.append(numDiv);
+                }
+            }
+
+            function generateCalledNumbers() {
+                var container = $('#called-number-list');
+                container.empty();
+                for (var i = 1; i <= 25; i++) {
+                    var numDiv = $('<div></div>').addClass('number').text(i);
+                    if (numbersCalled.includes(i)) {
+                        numDiv.addClass('called');
+                    }
+                    container.append(numDiv);
+                }
+            }
+
+            function updateCalledNumbers() {
+                $('#called-number-list .number').each(function() {
+                    var num = parseInt($(this).text());
+                    if (numbersCalled.includes(num)) {
+                        $(this).addClass('called');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
