@@ -8,6 +8,7 @@ from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import threading
+# import os
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -244,9 +245,9 @@ def check_bingo(marked):
             return True
     return False
 
-# if __name__ == '__main__':
-#     socketio.run(app, debug=True)
+if __name__ == '__main__':
+    socketio.run(app, debug=True)
 #     # socketio.run(app, host='0.0.0.0', port=5000, debug=True)
 
-if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+# if __name__ == '__main__':
+#     socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
