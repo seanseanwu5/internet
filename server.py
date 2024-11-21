@@ -2,7 +2,7 @@
 # Backend server using Flask and Socket.IO
 
 import eventlet
-eventlet.monkey_patch(socket=False, time=False, dns=False)
+eventlet.monkey_patch()
 
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, join_room, leave_room
@@ -244,9 +244,9 @@ def check_bingo(marked):
             return True
     return False
 
-if __name__ == '__main__':
-    socketio.run(app, debug=True)
+# if __name__ == '__main__':
+#     socketio.run(app, debug=True)
 #     # socketio.run(app, host='0.0.0.0', port=5000, debug=True)
 
-# if __name__ == '__main__':
-#     socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))

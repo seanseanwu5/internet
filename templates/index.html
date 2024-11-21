@@ -3,13 +3,12 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>BINGO 游戏</title>
+    <title>BINGO 遊戲</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.0/themes/smoothness/jquery-ui.css">
     <style>
-        /* 样式 */
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
@@ -132,7 +131,6 @@
             padding: 20px;
             border-radius: 5px;
         }
-        /* 适应屏幕大小 */
         @media (max-width: 1000px) {
             #wrapper {
                 flex-direction: column;
@@ -151,29 +149,29 @@
     </style>
 </head>
 <body>
-    <h1>BINGO 游戏</h1>
+    <h1>BINGO 遊戲</h1>
     <div id="wrapper">
         <div id="content">
             <div id="login">
-                <h2>请输入您的信息</h2>
+                <h2>請輸入您的訊息</h2>
                 <label>用户名：</label>
                 <input type="text" id="username"><br><br>
-                <label>房间号：</label>
+                <label>房間號：</label>
                 <input type="text" id="room"><br><br>
-                <button id="create-room">建立房间</button>
-                <button id="join-room">加入房间</button>
+                <button id="create-room">建立房間</button>
+                <button id="join-room">加入房間</button>
             </div>
             <div id="game" style="display:none;">
-                <h2>玩家：<span id="player-name"></span> | 房间：<span id="room-name"></span></h2>
+                <h2>玩家：<span id="player-name"></span> | 房間：<span id="room-name"></span></h2>
                 <div id="player-list">
-                    <h3>当前玩家：</h3>
+                    <h3>當前玩家：</h3>
                     <ul id="players"></ul>
                 </div>
                 <div id="setup-board">
-                    <h3>请拖放 1~25 的数字到下方的 BINGO 板</h3>
+                    <h3>請拖放 1~25 的數字到下方的 BINGO 板</h3>
                     <div id="number-pool"></div>
                     <table id="bingo-board">
-                        <!-- 生成 5x5 空表格 -->
+                        <!-- Generate 5x5 empty table -->
                         <tbody>
                             <tr>
                                 <td></td><td></td><td></td><td></td><td></td>
@@ -197,14 +195,14 @@
                 <div id="waiting" style="display:none;">
                     <h3>等待其他玩家...</h3>
                     <ul id="waiting-player-list"></ul>
-                    <button id="start-game">开始游戏</button>
+                    <button id="start-game">開始遊戲</button>
                 </div>
                 <div id="bingo-game" style="display:none;">
-                    <h3>轮到：<span id="current-player"></span></h3>
-                    <h3>倒计时：<span id="timer">15</span> 秒</h3>
+                    <h3>輪到：<span id="current-player"></span></h3>
+                    <h3>倒數計時：<span id="timer">15</span> 秒</h3>
                     <table id="bingo-board-game"></table>
                     <div id="called-numbers">
-                        <h3>已被选取的数字：</h3>
+                        <h3>已被選擇的數字：</h3>
                         <div id="called-number-list"></div>
                     </div>
                 </div>
@@ -214,7 +212,7 @@
             <h3>聊天</h3>
             <div id="chat-messages"></div>
             <input type="text" id="chat-input">
-            <button id="send-message">发送</button>
+            <button id="send-message">發送</button>
         </div>
     </div>
     <script>
@@ -291,13 +289,13 @@
                 $('#bingo-board td').each(function() {
                     var num = $(this).data('number');
                     if (!num) {
-                        alert('请将所有数字填满');
+                        alert('請將所有數字填滿');
                         numbers = [];
                         return false;
                     }
                     num = parseInt(num);
                     if (usedNumbers[num]) {
-                        alert('每个数字只能使用一次');
+                        alert('每個數字只能使用一次');
                         numbers = [];
                         return false;
                     }
@@ -339,7 +337,7 @@
                 var list = $('#waiting-player-list');
                 list.empty();
                 for (var uname in status) {
-                    var item = $('<li></li>').text(uname + (status[uname] ? ' 已完成' : ' 选择中...'));
+                    var item = $('<li></li>').text(uname + (status[uname] ? ' 已完成' : ' 選擇中...'));
                     list.append(item);
                 }
             });
@@ -363,7 +361,7 @@
             });
 
             socket.on('turn_skipped', function(data) {
-                alert('玩家 ' + data.username + ' 超时，跳过他的回合');
+                alert('玩家 ' + data.username + ' 超時，跳過他的回合');
             });
 
             socket.on('number_called', function(data) {
@@ -376,13 +374,13 @@
                     updateGameBoard();
                 }
                 if (data.winner) {
-                    alert('玩家 ' + data.winner + ' 获胜！');
+                    alert('玩家 ' + data.winner + ' 獲勝！');
                     isMyTurn = false;
                 }
             });
 
             socket.on('game_over', function(data) {
-                alert('游戏结束！玩家 ' + data.winner + ' 获胜！');
+                alert('遊戲結束！玩家 ' + data.winner + ' 獲勝！');
                 isMyTurn = false;
             });
 
@@ -408,7 +406,7 @@
                             if (isMyTurn) {
                                 var num = $(this).data('number');
                                 if (numbersCalled.includes(num)) {
-                                    alert('该数字已被选过');
+                                    alert('該數字已被選過');
                                     return;
                                 }
                                 socket.emit('number_selected', {'number': num});
