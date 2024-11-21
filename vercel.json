@@ -1,15 +1,10 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "server.py",
-      "use": "@vercel/python"
+  "functions": {
+    "api/server.py": {
+      "runtime": "python3.9"
     }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "server.py"
-    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/server.py" }
   ]
 }
