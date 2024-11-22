@@ -8,6 +8,7 @@
     <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.0/themes/smoothness/jquery-ui.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/hammer.js/2.0.8/hammer.min.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -207,6 +208,9 @@
                 touch-action: none;
             }
         }
+        .number {
+            touch-action: none;
+        }
     </style>
 </head>
 <body>
@@ -355,24 +359,32 @@
                 });
             }
             $(function() {
-                // 手機版拖拉事件的修正
                 function generateNumberPool() {
                     var pool = $('#number-pool');
                     for (var i = 1; i <= 25; i++) {
                         var numDiv = $('<div></div>').addClass('number').text(i);
+                        var hammer = new Hammer.Manager(numDiv[0], {
+                            recognizers: [
+                                [Hammer.Press, {time: 500}]
+                            ]
+                        });
+                        hammer.on('press', function(e) {
+                            var $this = $(e.target);
+                            if ($this.is(':not(.disabled)')) {
+                                $this.trigger('dragstart');
+                            }
+                        });
                         numDiv.draggable({
                             helper: 'clone',
-                            revert: 'invalid'
-                        });
-                        // 添加長按事件
-                        numDiv.on('touchstart', function(e) {
-                            e.preventDefault();
-                            var $this = $(this);
-                            setTimeout(function() {
-                                if ($this.is(':not(.disabled)')) {
-                                    $this.trigger('dragstart');
-                                }
-                            }, 500); // 500ms 後觸發拖動事件
+                            revert: 'invalid',
+                            start: function(event, ui) {
+                                // 禁用滾動
+                                $('body').css('overflow', 'hidden');
+                            },
+                            stop: function(event, ui) {
+                                // 恢復滾動
+                                $('body').css('overflow', 'auto');
+                            }
                         });
                         pool.append(numDiv);
                     }
@@ -402,7 +414,6 @@
 
                 generateNumberPool();
                 makeBoardDroppable();
-
             });
             $('#submit-board').click(function() {
                 var numbers = [];
