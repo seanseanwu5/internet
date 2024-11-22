@@ -354,10 +354,56 @@
                     }
                 });
             }
+            $(function() {
+                // 手機版拖拉事件的修正
+                function generateNumberPool() {
+                    var pool = $('#number-pool');
+                    for (var i = 1; i <= 25; i++) {
+                        var numDiv = $('<div></div>').addClass('number').text(i);
+                        numDiv.draggable({
+                            helper: 'clone',
+                            revert: 'invalid'
+                        });
+                        // 添加長按事件
+                        numDiv.on('touchstart', function(e) {
+                            e.preventDefault();
+                            var $this = $(this);
+                            setTimeout(function() {
+                                if ($this.is(':not(.disabled)')) {
+                                    $this.trigger('dragstart');
+                                }
+                            }, 500); // 500ms 後觸發拖動事件
+                        });
+                        pool.append(numDiv);
+                    }
+                }
 
-            generateNumberPool();
-            makeBoardDroppable();
+                function makeBoardDroppable() {
+                    $('#bingo-board td').droppable({
+                        accept: '.number',
+                        drop: function(event, ui) {
+                            var number = ui.draggable.text();
+                            if ($(this).text() !== '') {
+                                var prevNumber = $(this).text();
+                                // Enable the previous number
+                                $('#number-pool .number').each(function() {
+                                    if ($(this).text() === prevNumber) {
+                                        $(this).draggable('enable').removeClass('disabled');
+                                    }
+                                });
+                            }
+                            $(this).text(number);
+                            $(this).data('number', number);
+                            // Disable the number in pool
+                            ui.draggable.draggable('disable').addClass('disabled');
+                        }
+                    });
+                }
 
+                generateNumberPool();
+                makeBoardDroppable();
+
+            });
             $('#submit-board').click(function() {
                 var numbers = [];
                 var usedNumbers = {};
@@ -581,3 +627,7 @@
     </script>
 </body>
 </html>
+
+
+
+
