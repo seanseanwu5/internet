@@ -1,136 +1,191 @@
 <!-- index.html -->
-<!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>BINGO 遊戲</title>
+    <title>專業BINGO遊戲</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.min.js"></script>
     <script src="https://code.jquery.com/ui/1.13.0/jquery-ui.min.js"></script>
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.0/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-        }
-        #wrapper {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(45deg, #3a7bd5, #00d2ff);
+            color: #333;
+            margin: 0;
+            padding: 0;
             display: flex;
-            width: 90%;
-            margin: auto;
-            margin-top: 20px;
+            flex-direction: column;
+            min-height: 100vh;
         }
+
+        h1 {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px 0;
+            margin: 0;
+            font-size: 36px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        #wrapper {
+            width: 90%;
+            max-width: 1200px;
+            display: flex;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin: auto;
+            flex: 1;
+        }
+
         #content {
             flex: 1;
-            margin-right: 20px;
+            padding: 20px;
         }
+
         #chat-container {
             width: 300px;
-            background-color: #fff;
-            padding: 10px;
-            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
-        h1, h2, h3 {
+
+        h2, h3 {
+            text-align: center;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        #bingo-board, #bingo-board-game {
+            margin: 0 auto;
             text-align: center;
         }
+
         #bingo-board td, #bingo-board-game td {
-            width: 50px;
-            height: 50px;
-            text-align: center;
-            border: 1px solid #000;
-            font-size: 18px;
+            width: 60px;
+            height: 60px;
+            line-height: 60px;
+            border: 2px solid #3498db;
+            font-size: 24px;
             cursor: pointer;
-            vertical-align: middle;
+            background-color: #ecf0f1;
+            transition: all 0.1s ease;
         }
-        #bingo-board td {
-            background-color: #e0e0e0;
+
+        #bingo-board td:hover, #bingo-board-game td:hover {
+            background-color: #bdc3c7;
         }
-        #bingo-board-game td {
-            background-color: #fff;
-        }
+
         #bingo-board-game .marked {
-            background-color: #8bc34a;
+            background-color: #3498db;
             color: #fff;
+            box-shadow: 0 0 10px #3498db;
         }
+
         #number-pool .number {
             display: inline-block;
-            width: 30px;
-            height: 30px;
-            margin: 2px;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
+            margin: 5px;
             text-align: center;
-            line-height: 30px;
-            border: 1px solid #000;
+            border: 2px solid #3498db;
             cursor: move;
             background-color: #fff;
-            border-radius: 3px;
+            border-radius: 50%;
+            transition: all 0.1s ease;
         }
-        #number-pool .number.disabled {
-            opacity: 0.5;
-            cursor: default;
-        }
-        #player-list {
-            border: 1px solid #000;
-            padding: 5px;
-            margin-bottom: 10px;
-        }
-        #timer {
-            font-size: 20px;
-            color: red;
-        }
-        #called-numbers {
-            margin-top: 20px;
-        }
-        #called-numbers .number {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            margin: 2px;
-            text-align: center;
-            line-height: 30px;
-            border: 1px solid #000;
-            background-color: #ccc;
-            border-radius: 3px;
-        }
-        #called-numbers .number.called {
-            background-color: #8bc34a;
+
+        #number-pool .number:hover, #number-pool .number:active {
+            background-color: #3498db;
             color: #fff;
         }
-        #number-selection {
-            margin-top: 20px;
+
+        #number-pool .number.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
-        #chat-container {
-            margin-top: 20px;
+
+        #player-list {
+            border: 2px solid #3498db;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #ecf0f1;
         }
-        #chat-messages {
-            background-color: #f9f9f9;
-            padding: 5px;
-            border: 1px solid #000;
-            height: 400px;
-            overflow-y: scroll;
+
+        #timer {
+            font-size: 28px;
+            color: #e74c3c;
+            animation: pulse 2s infinite;
         }
-        #chat-input {
-            width: calc(100% - 80px);
-            margin-top: 10px;
-            padding: 5px;
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
-        #send-message {
-            width: 60px;
-            padding: 5px;
-            margin-left: 10px;
-            margin-top: 10px;
+
+        #called-numbers .number {
+            display: inline-block;
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
+            margin: 2px;
+            text-align: center;
+            border: 1px solid #3498db;
+            background-color: #bdc3c7;
+            border-radius: 5px;
+            transition: all 0.1s ease;
         }
+
+        #called-numbers .number.called {
+            background-color: #3498db;
+            color: #fff;
+            transform: scale(1.2);
+        }
+
         button {
-            padding: 5px 10px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
             margin-top: 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border-radius: 5px;
         }
-        input[type="text"], input[type="number"] {
-            padding: 5px;
-            width: calc(100% - 10px);
+
+        button:hover {
+            background-color: #2980b9;
         }
+
+        input[type="text"] {
+            padding: 10px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+
         #login, #game {
             background-color: #fff;
             padding: 20px;
-            border-radius: 5px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            animation: fadeIn 1s;
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         @media (max-width: 1000px) {
             #wrapper {
                 flex-direction: column;
@@ -144,6 +199,12 @@
             }
             #chat-messages {
                 height: 300px;
+            }
+        }
+
+        @media (max-width: 767px) {
+            .number {
+                touch-action: none;
             }
         }
     </style>
@@ -171,7 +232,6 @@
                     <h3>請拖放 1~25 的數字到下方的 BINGO 板</h3>
                     <div id="number-pool"></div>
                     <table id="bingo-board">
-                        <!-- Generate 5x5 empty table -->
                         <tbody>
                             <tr>
                                 <td></td><td></td><td></td><td></td><td></td>
@@ -205,6 +265,11 @@
                         <h3>已被選擇的數字：</h3>
                         <div id="called-number-list"></div>
                     </div>
+                </div>
+                <div id="game-over" style="display:none;">
+                    <h2>遊戲結束！</h2>
+                    <p>獲勝者：<span id="winner-name"></span></p>
+                    <button id="restart-game">重新開始</button>
                 </div>
             </div>
         </div>
@@ -253,6 +318,16 @@
                     numDiv.draggable({
                         helper: 'clone',
                         revert: 'invalid'
+                    });
+                    // 添加長按事件
+                    numDiv.on('touchstart', function(e) {
+                        e.preventDefault();
+                        var $this = $(this);
+                        setTimeout(function() {
+                            if ($this.is(':not(.disabled)')) {
+                                $this.trigger('dragstart');
+                            }
+                        }, 500); // 500ms 後觸發拖動事件
                     });
                     pool.append(numDiv);
                 }
@@ -324,6 +399,17 @@
                 $('#chat-input').val('');
             });
 
+            // 添加 Enter 鍵發送消息功能
+            $('#chat-input').keypress(function(e) {
+                if (e.which == 13) { // 13 是 Enter 鍵的鍵碼
+                    $('#send-message').click();
+                }
+            });
+
+            $('#restart-game').click(function() {
+                socket.emit('restart_game');
+            });
+
             socket.on('update_player_list', function(data) {
                 var list = $('#players');
                 list.empty();
@@ -381,12 +467,32 @@
 
             socket.on('game_over', function(data) {
                 alert('遊戲結束！玩家 ' + data.winner + ' 獲勝！');
+                $('#bingo-game').hide();
+                $('#game-over').show();
+                $('#winner-name').text(data.winner);
                 isMyTurn = false;
             });
 
             socket.on('new_message', function(data) {
                 $('#chat-messages').append('<div><strong>' + data.username + ':</strong> ' + data.message + '</div>');
                 $('#chat-messages').scrollTop($('#chat-messages')[0].scrollHeight);
+            });
+
+            socket.on('restart_game', function() {
+                $('#game-over').hide();
+                $('#setup-board').show();
+                $('#waiting').hide();
+                $('#bingo-game').hide();
+                // 清空數字池並重新生成
+                $('#number-pool').empty();
+                generateNumberPool();
+                // 清空 BINGO 板子
+                $('#bingo-board td').each(function() {
+                    $(this).text('').data('number', '');
+                });
+                board = [];
+                marked = [];
+                numbersCalled = [];
             });
 
             function generateGameBoard() {

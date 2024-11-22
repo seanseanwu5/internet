@@ -224,6 +224,31 @@ def on_send_message(data):
     else:
         emit('new_message', {'username': username, 'message': message})
 
+@socketio.on('restart_game')
+def on_restart_game():
+    sid = request.sid
+    user = sid_to_user.get(sid)
+    if not user:
+        return
+    room = user['room']
+    if room not in rooms:
+        emit('error', {'message': '房間不存在'})
+        return
+    # Reset game state
+    rooms[room]['game_started'] = False
+    rooms[room]['numbers_called'] = []
+    rooms[room]['turn_order'] = []
+    rooms[room]['current_turn'] = 0
+    rooms[room]['start_votes'] = set()
+    rooms[room]['waiting_for_players'] = True
+    for player in rooms[room]['players'].values():
+        player['board'] = []
+        player['marked'] = []
+        player['bingo'] = False
+        player['submitted'] = False
+    # Notify all players to reset their boards
+    emit('restart_game', room=room)
+
 def check_bingo(marked):
     lines = [
         [0,1,2,3,4],
@@ -246,10 +271,6 @@ def check_bingo(marked):
 
 # if __name__ == '__main__':
 #     socketio.run(app, debug=True)
-#     # socketio.run(app, host='0.0.0.0', port=5000, debug=True)
-
-# if __name__ == '__main__':
-#     socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
 if __name__ == '__main__':
     import os
     # Render 会通过环境变量 PORT 指定动态端口
