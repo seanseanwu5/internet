@@ -35,25 +35,37 @@
             width: 90%;
             max-width: 1200px;
             display: flex;
+            flex-direction: row; /* 確保是水平排列 */
             background: rgba(255, 255, 255, 0.9);
             border-radius: 15px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
             padding: 20px;
             margin: auto;
-            flex: 1;
         }
 
         #content {
-            flex: 1;
+            flex: 1; /* 讓內容區塊自動填充可用空間 */
             padding: 20px;
         }
 
         #chat-container {
-            width: 300px;
+            flex: 0 0 300px; /* 固定聊天框寬度 */
             background-color: rgba(255, 255, 255, 0.8);
             padding: 20px;
             border-radius: 15px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        #chat-messages {
+            flex: 1; /* 讓聊天消息區域填充剩餘的垂直空間 */
+            overflow-y: auto; /* 如果內容過多，允許滾動 */
+            margin-bottom: 10px; /* 為輸入框留點空間 */
+        }
+
+        #chat-input, #send-message {
+            margin-top: auto; /* 將輸入框和按鈕推到底部 */
         }
 
         h2, h3 {
@@ -638,7 +650,3 @@
     </script>
 </body>
 </html>
-
-
-
-
