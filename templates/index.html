@@ -388,62 +388,93 @@
             });
             // ----------------------------------------------------------------------
             $(function() {
+                var currentSelection = null;
+                var isTouchDevice = 'ontouchstart' in document.documentElement;
+
+                // 初始化數字池
                 function generateNumberPool() {
                     var pool = $('#number-pool');
                     for (var i = 1; i <= 25; i++) {
                         var numDiv = $('<div></div>').addClass('number').text(i);
-                        var hammer = new Hammer.Manager(numDiv[0], {
-                            recognizers: [
-                                [Hammer.Press, {time: 500}]
-                            ]
-                        });
-                        hammer.on('press', function(e) {
-                            var $this = $(e.target);
-                            if ($this.is(':not(.disabled)')) {
-                                $this.trigger('dragstart');
-                            }
-                        });
-                        numDiv.draggable({
-                            helper: 'clone',
-                            revert: 'invalid',
-                            start: function(event, ui) {
-                                // 禁用滾動
-                                $('body').css('overflow', 'hidden');
-                            },
-                            stop: function(event, ui) {
-                                // 恢復滾動
-                                $('body').css('overflow', 'auto');
-                            }
-                        });
+                        
+                        if (isTouchDevice) {
+                            // 觸控設備的點擊選擇邏輯
+                            numDiv.click(function(e) {
+                                e.preventDefault(); // 阻止事件冒泡
+                                if ($(this).hasClass('disabled')) return;
+                                if (currentSelection) {
+                                    // 如果已經有選擇，取消之前的選擇
+                                    $('.number.selected').removeClass('selected');
+                                }
+                                $(this).toggleClass('selected');
+                                currentSelection = $(this).hasClass('selected') ? $(this).text() : null;
+                            });
+                        } else {
+                            // 非觸控設備的拖放邏輯
+                            numDiv.draggable({
+                                helper: 'clone',
+                                revert: 'invalid',
+                                start: function(event, ui) {
+                                    $('body').css('overflow', 'hidden');
+                                },
+                                stop: function(event, ui) {
+                                    $('body').css('overflow', 'auto');
+                                }
+                            });
+                        }
                         pool.append(numDiv);
                     }
                 }
 
-                function makeBoardDroppable() {
-                    $('#bingo-board td').droppable({
-                        accept: '.number',
-                        drop: function(event, ui) {
-                            var number = ui.draggable.text();
-                            if ($(this).text() !== '') {
-                                var prevNumber = $(this).text();
-                                // Enable the previous number
-                                $('#number-pool .number').each(function() {
-                                    if ($(this).text() === prevNumber) {
-                                        $(this).draggable('enable').removeClass('disabled');
+                // 使 BINGO 板格子可點擊或可放置
+                function makeBoardClickableOrDroppable() {
+                    $('#bingo-board td').each(function() {
+                        var $td = $(this);
+                        if (isTouchDevice) {
+                            // 觸控設備的點擊邏輯
+                            $td.click(function() {
+                                if (currentSelection && !$(this).text()) {
+                                    $(this).text(currentSelection);
+                                    $(this).data('number', currentSelection);
+                                    $('#number-pool .number').each(function() {
+                                        if ($(this).text() === currentSelection) {
+                                            $(this).removeClass('selected').addClass('disabled');
+                                            currentSelection = null;
+                                        }
+                                    });
+                                }
+                            });
+                        } else {
+                            // 非觸控設備的拖放邏輯
+                            $td.droppable({
+                                accept: '.number',
+                                drop: function(event, ui) {
+                                    var number = ui.draggable.text();
+                                    if ($(this).text() !== '') {
+                                        var prevNumber = $(this).text();
+                                        // Enable the previous number
+                                        $('#number-pool .number').each(function() {
+                                            if ($(this).text() === prevNumber) {
+                                                $(this).draggable('enable').removeClass('disabled');
+                                            }
+                                        });
                                     }
-                                });
-                            }
-                            $(this).text(number);
-                            $(this).data('number', number);
-                            // Disable the number in pool
-                            ui.draggable.draggable('disable').addClass('disabled');
+                                    $(this).text(number);
+                                    $(this).data('number', number);
+                                    // Disable the number in pool
+                                    ui.draggable.draggable('disable').addClass('disabled');
+                                }
+                            });
                         }
                     });
                 }
 
                 generateNumberPool();
-                makeBoardDroppable();
+                makeBoardClickableOrDroppable();
+
+                // 其餘的遊戲邏輯保持不變...
             });
+            // ----------------------------------------------------------------------
             $('#submit-board').click(function() {
                 var numbers = [];
                 var usedNumbers = {};
