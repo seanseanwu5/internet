@@ -525,7 +525,46 @@
 
             $('#restart-game').click(function() {
                 socket.emit('restart_game');
+                // 清空數字池並重新生成
+                $('#number-pool').empty();
+                generateNumberPool();
+                // 清空 BINGO 板子
+                $('#bingo-board td').each(function() {
+                    $(this).text('').data('number', '');
+                });
+                board = [];
+                marked = [];
+                numbersCalled = [];
+                currentSelection = null; // 重置 currentSelection
+
+                // 重新初始化觸控事件綁定
+                if (isTouchDevice) {
+                    $('#number-pool .number').off('click').on('click', function(e) {
+                        e.preventDefault(); // 阻止事件冒泡
+                        if ($(this).hasClass('disabled')) return;
+                        if (currentSelection) {
+                            // 如果已經有選擇，取消之前的選擇
+                            $('.number.selected').removeClass('selected');
+                        }
+                        $(this).toggleClass('selected');
+                        currentSelection = $(this).hasClass('selected') ? $(this).text() : null;
+                    });
+
+                    $('#bingo-board td').off('click').on('click', function() {
+                        if (currentSelection && !$(this).text()) {
+                            $(this).text(currentSelection);
+                            $(this).data('number', currentSelection);
+                            $('#number-pool .number').each(function() {
+                                if ($(this).text() === currentSelection) {
+                                    $(this).removeClass('selected').addClass('disabled');
+                                    currentSelection = null;
+                                }
+                            });
+                        }
+                    });
+                }
             });
+
 
             socket.on('update_player_list', function(data) {
                 var list = $('#players');
