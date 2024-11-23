@@ -333,148 +333,68 @@
                 var pool = $('#number-pool');
                 for (var i = 1; i <= 25; i++) {
                     var numDiv = $('<div></div>').addClass('number').text(i);
-                    numDiv.draggable({
-                        helper: 'clone',
-                        revert: 'invalid'
-                    });
-                    // 添加長按事件
-                    numDiv.on('touchstart', function(e) {
-                        e.preventDefault();
-                        var $this = $(this);
-                        setTimeout(function() {
-                            if ($this.is(':not(.disabled)')) {
-                                $this.trigger('dragstart');
+                    if (isTouchDevice) {
+                        numDiv.on('click', function(e) {
+                            e.preventDefault();
+                            if ($(this).hasClass('disabled')) return;
+                            if (currentSelection) {
+                                // 如果已經有選擇的數字，取消選擇
+                                $('.number.selected').removeClass('selected');
                             }
-                        }, 500); // 500ms 後觸發拖動事件
-                    });
+                            $(this).toggleClass('selected');
+                            currentSelection = $(this).hasClass('selected') ? $(this).text() : null;
+                        });
+                    } else {
+                        numDiv.draggable({
+                            helper: 'clone',
+                            revert: 'invalid'
+                        });
+                    }
                     pool.append(numDiv);
                 }
             }
 
-            function makeBoardDroppable() {
-                $('#bingo-board td').droppable({
-                    accept: '.number',
-                    drop: function(event, ui) {
-                        var number = ui.draggable.text();
-                        if ($(this).text() !== '') {
-                            var prevNumber = $(this).text();
-                            // Enable the previous number
-                            $('#number-pool .number').each(function() {
-                                if ($(this).text() === prevNumber) {
-                                    $(this).draggable('enable').removeClass('disabled');
-                                }
-                            });
-                        }
-                        $(this).text(number);
-                        $(this).data('number', number);
-                        // Disable the number in pool
-                        ui.draggable.draggable('disable').addClass('disabled');
-                    }
-                });
-            }
-            // ----------------------------------------------------------------------
-            $('.number').on('click', function() {
-                if ($(this).hasClass('disabled')) return;
-                var number = $(this).text();
-                if (!currentSelection) {
-                    currentSelection = number;
-                    $(this).addClass('selected');
-                } else {
-                    // 放置邏輯
-                    var cell = $('#bingo-board td:empty').first();
-                    cell.text(number);
-                    cell.data('number', number);
-                    $(this).addClass('disabled').removeClass('selected');
-                    currentSelection = null;
-                }
-            });
-            // ----------------------------------------------------------------------
-            $(function() {
-
-                // 初始化數字池
-                function generateNumberPool() {
-                    var pool = $('#number-pool');
-                    for (var i = 1; i <= 25; i++) {
-                        var numDiv = $('<div></div>').addClass('number').text(i);
-                        
-                        if (isTouchDevice) {
-                            // 觸控設備的點擊選擇邏輯
-                            numDiv.click(function(e) {
-                                e.preventDefault(); // 阻止事件冒泡
-                                if ($(this).hasClass('disabled')) return;
-                                if (currentSelection) {
-                                    // 如果已經有選擇，取消之前的選擇
-                                    $('.number.selected').removeClass('selected');
-                                }
-                                $(this).toggleClass('selected');
-                                currentSelection = $(this).hasClass('selected') ? $(this).text() : null;
-                            });
-                        } else {
-                            // 非觸控設備的拖放邏輯
-                            numDiv.draggable({
-                                helper: 'clone',
-                                revert: 'invalid',
-                                start: function(event, ui) {
-                                    $('body').css('overflow', 'hidden');
-                                },
-                                stop: function(event, ui) {
-                                    $('body').css('overflow', 'auto');
-                                }
-                            });
-                        }
-                        pool.append(numDiv);
-                    }
-                }
-
-                // 使 BINGO 板格子可點擊或可放置
-                function makeBoardClickableOrDroppable() {
-                    $('#bingo-board td').each(function() {
-                        var $td = $(this);
-                        if (isTouchDevice) {
-                            // 觸控設備的點擊邏輯
-                            $td.click(function() {
-                                if (currentSelection && !$(this).text()) {
-                                    $(this).text(currentSelection);
-                                    $(this).data('number', currentSelection);
+            function makeBoardClickableOrDroppable() {
+                $('#bingo-board td').each(function() {
+                    var $td = $(this);
+                    if (isTouchDevice) {
+                        $td.click(function() {
+                            if (currentSelection && !$(this).text()) {
+                                $(this).text(currentSelection);
+                                $(this).data('number', currentSelection);
+                                $('#number-pool .number').each(function() {
+                                    if ($(this).text() === currentSelection) {
+                                        $(this).removeClass('selected').addClass('disabled');
+                                        currentSelection = null;
+                                    }
+                                });
+                            }
+                        });
+                    } else {
+                        $td.droppable({
+                            accept: '.number',
+                            drop: function(event, ui) {
+                                var number = ui.draggable.text();
+                                if ($(this).text() !== '') {
+                                    var prevNumber = $(this).text();
                                     $('#number-pool .number').each(function() {
-                                        if ($(this).text() === currentSelection) {
-                                            $(this).removeClass('selected').addClass('disabled');
-                                            currentSelection = null;
+                                        if ($(this).text() === prevNumber) {
+                                            $(this).draggable('enable').removeClass('disabled');
                                         }
                                     });
                                 }
-                            });
-                        } else {
-                            // 非觸控設備的拖放邏輯
-                            $td.droppable({
-                                accept: '.number',
-                                drop: function(event, ui) {
-                                    var number = ui.draggable.text();
-                                    if ($(this).text() !== '') {
-                                        var prevNumber = $(this).text();
-                                        // Enable the previous number
-                                        $('#number-pool .number').each(function() {
-                                            if ($(this).text() === prevNumber) {
-                                                $(this).draggable('enable').removeClass('disabled');
-                                            }
-                                        });
-                                    }
-                                    $(this).text(number);
-                                    $(this).data('number', number);
-                                    // Disable the number in pool
-                                    ui.draggable.draggable('disable').addClass('disabled');
-                                }
-                            });
-                        }
-                    });
-                }
+                                $(this).text(number);
+                                $(this).data('number', number);
+                                ui.draggable.draggable('disable').addClass('disabled');
+                            }
+                        });
+                    }
+                });
+            }
 
-                generateNumberPool();
-                makeBoardClickableOrDroppable();
+            generateNumberPool();
+            makeBoardClickableOrDroppable();
 
-                // 其餘的遊戲邏輯保持不變...
-            });
-            // ----------------------------------------------------------------------
             $('#submit-board').click(function() {
                 var numbers = [];
                 var usedNumbers = {};
@@ -505,6 +425,7 @@
                 $('#waiting').show();
             });
 
+
             $('#start-game').click(function() {
                 socket.emit('start_game');
             });
@@ -523,48 +444,9 @@
                 }
             });
 
-            $('#restart-game').click(function() {
+            $('#restart-game').click(function () {
                 socket.emit('restart_game');
-                // 清空數字池並重新生成
-                $('#number-pool').empty();
-                generateNumberPool();
-                // 清空 BINGO 板子
-                $('#bingo-board td').each(function() {
-                    $(this).text('').data('number', '');
-                });
-                board = [];
-                marked = [];
-                numbersCalled = [];
-                currentSelection = null; // 重置 currentSelection
-
-                // 重新初始化觸控事件綁定
-                if (isTouchDevice) {
-                    $('#number-pool .number').off('click').on('click', function(e) {
-                        e.preventDefault(); // 阻止事件冒泡
-                        if ($(this).hasClass('disabled')) return;
-                        if (currentSelection) {
-                            // 如果已經有選擇，取消之前的選擇
-                            $('.number.selected').removeClass('selected');
-                        }
-                        $(this).toggleClass('selected');
-                        currentSelection = $(this).hasClass('selected') ? $(this).text() : null;
-                    });
-
-                    $('#bingo-board td').off('click').on('click', function() {
-                        if (currentSelection && !$(this).text()) {
-                            $(this).text(currentSelection);
-                            $(this).data('number', currentSelection);
-                            $('#number-pool .number').each(function() {
-                                if ($(this).text() === currentSelection) {
-                                    $(this).removeClass('selected').addClass('disabled');
-                                    currentSelection = null;
-                                }
-                            });
-                        }
-                    });
-                }
             });
-
 
             socket.on('update_player_list', function(data) {
                 var list = $('#players');
