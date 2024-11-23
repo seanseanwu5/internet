@@ -112,7 +112,6 @@
             background-color: #fff;
             border-radius: 50%;
             transition: all 0.1s ease;
-            touch-action: none;
         }
 
         #number-pool .number:hover, #number-pool .number:active {
@@ -222,9 +221,6 @@
             }
         }
         .number {
-            touch-action: none;
-        }
-        #bingo-board td {
             touch-action: none;
         }
     </style>
@@ -374,72 +370,51 @@
                     }
                 });
             }
-            // --------------------------------------------------------------------------------------
+            // ----------------------------------------------------------------------
+            $('.number').on('click', function() {
+                if ($(this).hasClass('disabled')) return;
+                var number = $(this).text();
+                if (!currentSelection) {
+                    currentSelection = number;
+                    $(this).addClass('selected');
+                } else {
+                    // 放置邏輯
+                    var cell = $('#bingo-board td:empty').first();
+                    cell.text(number);
+                    cell.data('number', number);
+                    $(this).addClass('disabled').removeClass('selected');
+                    currentSelection = null;
+                }
+            });
+            // ----------------------------------------------------------------------
             $(function() {
-                var currentTarget = null; // 用來記錄當前拖動的元素
-
                 function generateNumberPool() {
                     var pool = $('#number-pool');
                     for (var i = 1; i <= 25; i++) {
                         var numDiv = $('<div></div>').addClass('number').text(i);
                         var hammer = new Hammer.Manager(numDiv[0], {
                             recognizers: [
-                                [Hammer.Pan, { direction: Hammer.DIRECTION_ALL }]
+                                [Hammer.Press, {time: 500}]
                             ]
                         });
-
-                        // 電腦版的拖放事件
+                        hammer.on('press', function(e) {
+                            var $this = $(e.target);
+                            if ($this.is(':not(.disabled)')) {
+                                $this.trigger('dragstart');
+                            }
+                        });
                         numDiv.draggable({
                             helper: 'clone',
                             revert: 'invalid',
                             start: function(event, ui) {
-                                currentTarget = $(this);
-                                $(this).addClass('dragging');
+                                // 禁用滾動
+                                $('body').css('overflow', 'hidden');
                             },
                             stop: function(event, ui) {
-                                if (currentTarget) {
-                                    currentTarget.removeClass('dragging');
-                                    currentTarget = null;
-                                }
+                                // 恢復滾動
+                                $('body').css('overflow', 'auto');
                             }
                         });
-
-                        // 手機版的拖放事件
-                        hammer.on('panstart', function(e) {
-                            currentTarget = $(e.target);
-                            currentTarget.addClass('dragging');
-                        });
-                        hammer.on('pan', function(e) {
-                            if (currentTarget) {
-                                var posX = e.deltaX;
-                                var posY = e.deltaY;
-                                currentTarget.css('transform', 'translate(' + posX + 'px, ' + posY + 'px)');
-                            }
-                        });
-                        hammer.on('panend', function(e) {
-                            if (currentTarget) {
-                                var number = currentTarget.text();
-                                var dropTarget = $('#bingo-board td').has(e.center);
-                                
-                                if (dropTarget.length) {
-                                    if (dropTarget.text() !== '') {
-                                        var prevNumber = dropTarget.text();
-                                        $('#number-pool .number').each(function() {
-                                            if ($(this).text() === prevNumber) {
-                                                $(this).draggable('enable').removeClass('disabled');
-                                            }
-                                        });
-                                    }
-                                    dropTarget.text(number);
-                                    dropTarget.data('number', number);
-                                    currentTarget.draggable('disable').addClass('disabled');
-                                }
-                                currentTarget.css('transform', 'translate(0px, 0px)');
-                                currentTarget.removeClass('dragging');
-                                currentTarget = null;
-                            }
-                        });
-
                         pool.append(numDiv);
                     }
                 }
@@ -451,6 +426,7 @@
                             var number = ui.draggable.text();
                             if ($(this).text() !== '') {
                                 var prevNumber = $(this).text();
+                                // Enable the previous number
                                 $('#number-pool .number').each(function() {
                                     if ($(this).text() === prevNumber) {
                                         $(this).draggable('enable').removeClass('disabled');
@@ -459,19 +435,15 @@
                             }
                             $(this).text(number);
                             $(this).data('number', number);
+                            // Disable the number in pool
                             ui.draggable.draggable('disable').addClass('disabled');
                         }
-                    });
-                    // 防止在拖動過程中觸發頁面滾動
-                    $('#bingo-board td').on('touchmove', function(e) {
-                        e.preventDefault();
                     });
                 }
 
                 generateNumberPool();
                 makeBoardDroppable();
             });
-            // --------------------------------------------------------------------------------------
             $('#submit-board').click(function() {
                 var numbers = [];
                 var usedNumbers = {};
