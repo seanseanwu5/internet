@@ -224,6 +224,9 @@
         .number {
             touch-action: none;
         }
+        #bingo-board td {
+            touch-action: none;
+        }
     </style>
 </head>
 <body>
@@ -371,7 +374,7 @@
                     }
                 });
             }
-// -----------------------------------------------------------------------------
+            // --------------------------------------------------------------------------------------
             $(function() {
                 var currentTarget = null; // 用來記錄當前拖動的元素
 
@@ -384,13 +387,29 @@
                                 [Hammer.Pan, { direction: Hammer.DIRECTION_ALL }]
                             ]
                         });
+
+                        // 電腦版的拖放事件
+                        numDiv.draggable({
+                            helper: 'clone',
+                            revert: 'invalid',
+                            start: function(event, ui) {
+                                currentTarget = $(this);
+                                $(this).addClass('dragging');
+                            },
+                            stop: function(event, ui) {
+                                if (currentTarget) {
+                                    currentTarget.removeClass('dragging');
+                                    currentTarget = null;
+                                }
+                            }
+                        });
+
+                        // 手機版的拖放事件
                         hammer.on('panstart', function(e) {
-                            // 開始拖動時記錄當前元素
                             currentTarget = $(e.target);
                             currentTarget.addClass('dragging');
                         });
                         hammer.on('pan', function(e) {
-                            // 拖動過程中移動元素
                             if (currentTarget) {
                                 var posX = e.deltaX;
                                 var posY = e.deltaY;
@@ -398,45 +417,61 @@
                             }
                         });
                         hammer.on('panend', function(e) {
-                            // 結束拖動，檢查是否可以放置
                             if (currentTarget) {
                                 var number = currentTarget.text();
                                 var dropTarget = $('#bingo-board td').has(e.center);
                                 
                                 if (dropTarget.length) {
                                     if (dropTarget.text() !== '') {
-                                        // 如果格子已經有數字，將其還原
                                         var prevNumber = dropTarget.text();
                                         $('#number-pool .number').each(function() {
                                             if ($(this).text() === prevNumber) {
-                                                $(this).removeClass('disabled');
+                                                $(this).draggable('enable').removeClass('disabled');
                                             }
                                         });
                                     }
                                     dropTarget.text(number);
                                     dropTarget.data('number', number);
-                                    currentTarget.addClass('disabled');
+                                    currentTarget.draggable('disable').addClass('disabled');
                                 }
-                                // 復位拖動元素
                                 currentTarget.css('transform', 'translate(0px, 0px)');
                                 currentTarget.removeClass('dragging');
                                 currentTarget = null;
                             }
                         });
+
                         pool.append(numDiv);
                     }
                 }
 
                 function makeBoardDroppable() {
+                    $('#bingo-board td').droppable({
+                        accept: '.number',
+                        drop: function(event, ui) {
+                            var number = ui.draggable.text();
+                            if ($(this).text() !== '') {
+                                var prevNumber = $(this).text();
+                                $('#number-pool .number').each(function() {
+                                    if ($(this).text() === prevNumber) {
+                                        $(this).draggable('enable').removeClass('disabled');
+                                    }
+                                });
+                            }
+                            $(this).text(number);
+                            $(this).data('number', number);
+                            ui.draggable.draggable('disable').addClass('disabled');
+                        }
+                    });
+                    // 防止在拖動過程中觸發頁面滾動
                     $('#bingo-board td').on('touchmove', function(e) {
-                        e.preventDefault(); // 防止滾動
+                        e.preventDefault();
                     });
                 }
 
                 generateNumberPool();
                 makeBoardDroppable();
             });
-// -----------------------------------------------------------------------------
+            // --------------------------------------------------------------------------------------
             $('#submit-board').click(function() {
                 var numbers = [];
                 var usedNumbers = {};
