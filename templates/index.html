@@ -207,7 +207,7 @@
                 margin-right: 0;
             }
             #chat-container {
-                width: 100%;
+                width: flex;
                 margin-top: 20px;
             }
             #chat-messages {
@@ -266,6 +266,7 @@
                             </tr>
                         </tbody>
                     </table>
+                    <button id="auto-fill">自動隨機登入</button>
                     <button id="submit-board">提交板</button>
                 </div>
                 <div id="waiting" style="display:none;">
@@ -394,7 +395,30 @@
 
             generateNumberPool();
             makeBoardClickableOrDroppable();
+// ------------------------------------------------------------------------------------
+            // 增加自動隨機填充功能
+            $('#auto-fill').click(function() {
+                var availableNumbers = Array.from({length: 25}, (_, i) => i + 1);
+                var shuffledNumbers = availableNumbers.sort(() => Math.random() - 0.5);
 
+                // 清空 BINGO 板
+                $('#bingo-board td').each(function() {
+                    $(this).text('').data('number', '');
+                });
+
+                // 隨機填充數字
+                $('#bingo-board td').each(function(index) {
+                    var number = shuffledNumbers[index];
+                    $(this).text(number);
+                    $(this).data('number', number);
+                    $('#number-pool .number').each(function() {
+                        if ($(this).text() == number) {
+                            $(this).removeClass('selected').addClass('disabled');
+                        }
+                    });
+                });
+            });
+// ------------------------------------------------------------------------------------
             $('#submit-board').click(function() {
                 var numbers = [];
                 var usedNumbers = {};
