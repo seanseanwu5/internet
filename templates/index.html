@@ -481,6 +481,7 @@
             })
 
             $('#restart-game').click(function () {
+
                 socket.emit('restart_game');
             });
 
@@ -564,6 +565,7 @@
                 $('#bingo-board td').each(function() {
                     $(this).text('').data('number', '');
                 });
+                $('#chat-container').show();
                 board = [];
                 marked = [];
                 numbersCalled = [];
