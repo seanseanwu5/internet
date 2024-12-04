@@ -184,6 +184,7 @@
             width: 100%;
             box-sizing: border-box;
             margin-bottom: 10px;
+            font-size: initial;
         }
 
         #login, #game {
@@ -360,7 +361,12 @@
                     pool.append(numDiv);
                 }
                 $('#chat-container').hide();
-                (document.querySelector('#wrapper')).style.width = "40%";
+                console.log(window.innerWidth);
+                if(window.innerWidth > 350){
+                    (document.querySelector('#wrapper')).style.width = "40%";
+                }else{
+                    (document.querySelector('#wrapper')).style.width = "90%";
+                }
             }
 
             function makeBoardClickableOrDroppable() {
