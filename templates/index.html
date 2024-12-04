@@ -268,6 +268,7 @@
                     </table>
                     <button id="auto-fill">數字自動隨機填入</button>
                     <button id="submit-board">提交板</button>
+                    <button id="back" style="float:right;">回首頁</button>
                 </div>
                 <div id="waiting" style="display:none;">
                     <h3>等待其他玩家...</h3>
@@ -318,6 +319,9 @@
                 $('#room-name').text(room);
                 $('#login').hide();
                 $('#game').show();
+                $('#chat-container').show();
+                (document.querySelector('#wrapper')).style.width = "90%";
+
             });
 
             $('#join-room').click(function() {
@@ -328,6 +332,8 @@
                 $('#room-name').text(room);
                 $('#login').hide();
                 $('#game').show();
+                $('#chat-container').show();
+                (document.querySelector('#wrapper')).style.width = "90%";
             });
 
             function generateNumberPool() {
@@ -353,6 +359,8 @@
                     }
                     pool.append(numDiv);
                 }
+                $('#chat-container').hide();
+                (document.querySelector('#wrapper')).style.width = "40%";
             }
 
             function makeBoardClickableOrDroppable() {
@@ -467,6 +475,10 @@
                     $('#send-message').click();
                 }
             });
+
+            $('#back').click(function() {
+                document.location.reload();
+            })
 
             $('#restart-game').click(function () {
                 socket.emit('restart_game');

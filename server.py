@@ -81,7 +81,6 @@ def on_disconnect():
                 del rooms[room]
             else:
                 update_player_list(room)
-                # Handle game state if a player leaves during the game
                 if rooms[room]['game_started']:
                     if username in rooms[room]['turn_order']:
                         idx = rooms[room]['turn_order'].index(username)
